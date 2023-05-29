@@ -1,0 +1,284 @@
+ final event = Event(
+            title: 'Barber Appoiment',
+            description:
+                'Barber appoiment ${ref.read(selectedTime.state).state}-'
+                '${DateFormat('dd/MM/yyyy').format(ref.read(selectedDate.state).state)}',
+            location: ref.read(selectedSalon.state).state.address,
+            startDate: DateTime(
+                ref.read(selectedDate.state).state.year,
+                ref.read(selectedDate.state).state.month,
+                ref.read(selectedDate.state).state.day,
+                hour,
+                minutes),
+            endDate: DateTime(
+                ref.read(selectedDate.state).state.year,
+                ref.read(selectedDate.state).state.month,
+                ref.read(selectedDate.state).state.day,
+                hour + 1,
+                minutes),
+            iosParams: const IOSParams(reminder: Duration(minutes: 30)),
+            androidParams: const AndroidParams(emailInvites: []));
+
+
+
+            String docID = '';
+      Future<String> docId() async {
+        String docID = await getdocId();
+        return docID;
+      }
+
+
+
+      ListView.builder(
+                  itemCount: userBooking.length,
+                  itemBuilder: ((context, index) {
+                    return Card(
+                      elevation: 8,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(22)),
+                      ),
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      children: [
+                                        Text(
+                                          'Date',
+                                          style: GoogleFonts.akshar(),
+                                        ),
+                                        Text(
+                                          DateFormat("dd/MM/yy").format(DateTime
+                                              .fromMillisecondsSinceEpoch(
+                                                  userBooking[index]
+                                                      .timestamp)),
+                                          style: GoogleFonts.robotoMono(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold),
+                                        )
+                                      ],
+                                    ),
+                                    Column(
+                                      children: [
+                                        Text(
+                                          'Time',
+                                          style: GoogleFonts.akshar(),
+                                        ),
+                                        Text(
+                                          TIME_SLOT.elementAt(
+                                              userBooking[index].slot),
+                                          style: GoogleFonts.robotoMono(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold),
+                                        )
+                                      ],
+                                    )
+                                  ],
+                                ),
+                                const Divider(
+                                  thickness: 3,
+                                ),
+                                Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(userBooking[index].SaloonName,
+                                            style: GoogleFonts.robotoFlex(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 20)),
+                                        Text(userBooking[index].BarberName,
+                                            style: GoogleFonts.robotoFlex(
+                                                fontWeight: FontWeight.normal,
+                                                fontSize: 10))
+                                      ],
+                                    ),
+                                    Text(userBooking[index].SaloonAddress,
+                                        style: GoogleFonts.robotoFlex(
+                                            fontWeight: FontWeight.w300,
+                                            fontSize: 7))
+                                  ],
+                                )
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: null,
+                            child: Container(
+                            decoration: const BoxDecoration(
+                                color: Colors.redAccent,
+                                borderRadius: BorderRadius.only(
+                                    bottomLeft: Radius.circular(22),
+                                    bottomRight: Radius.circular(22))),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 10),
+                                  child: Text(
+                                    'CANCLE',
+                                    style: GoogleFonts.robotoMono(
+                                        color: Colors.black),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }));
+
+
+
+
+                  dispalyBarber(Salonmodel salonmodel) {
+      return FutureBuilder(
+          future: fetchBarberData(salonmodel),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Center(child: Text('Error: ${snapshot.error}')),
+              );
+            } else if (!snapshot.hasData) {
+              return const Center(child: Text('No data found'));
+            } else {
+              List<BarberModel> barber = snapshot.data!;
+              return ListView.builder(
+                  itemCount: barber.length,
+                  itemBuilder: ((context, index) {
+                    return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: GestureDetector(
+                            onTap: () => ref.read(selectedBarber.state).state =
+                                barber[index],
+                            child: ref.read(selectedBarber.state).state.email==FirebaseAuth
+                            .instance.currentUser!.email?
+                            
+                            Card(
+                              child: ListTile(
+                                leading: const Icon(Icons.person),
+                                title: Text(
+                                  barber[index].name,
+                                ),
+                                subtitle: RatingBar.builder(
+                                  itemBuilder: (context, _) =>
+                                      const Icon(Icons.star_half_sharp),
+                                  itemSize: 16,
+                                  allowHalfRating: true,
+                                  initialRating: barber[index].rating,
+                                  direction: Axis.horizontal,
+                                  itemCount: 5,
+                                  ignoreGestures: true,
+                                  onRatingUpdate: (value) => {},
+                                ),
+                                trailing: ref
+                                            .read(selectedBarber.state)
+                                            .state
+                                            .docId ==
+                                        barber[index].docId
+                                    ? const Icon(Icons.check)
+                                    : null,
+                              ),
+                            ):showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          icon: const Icon(Icons.dangerous),
+                                          iconColor: Colors.red,
+                                          title: const Text('YOU ARE NOT VALID !!!'),
+                                          content: const Text(
+                                              'SELECT YOUR VALID SALON'),
+                                          actions: [
+                                            TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop();
+                                                },
+                                                child: const Text('OK'))
+                                          ],
+                                        );
+                                      });
+                                
+                              ));
+                  }));
+            }
+          });
+    }
+
+
+
+
+
+     Padding(
+                padding: const EdgeInsets.all(8),
+                child: FutureBuilder(
+                  future: getService(context, ref),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    } else {
+                      var services = snapshot.data as List<ServiceModel>;
+                      print(services);
+
+                      return Consumer(builder: ((context, ref, _) {
+                        var servicewatch =
+                            ref.watch(selectedService.state).state;
+
+                        return Column(
+                          children: [
+                            Container(
+                              color: Colors.white10,
+                              child: ChipsChoice<ServiceModel>.multiple(
+                                 
+                                choiceStyle: const C2ChipStyle(elevation: 8),
+                                value: servicewatch,
+                                onChanged: (val) =>
+                                    ref.read(selectedService.state).state = val,
+                                choiceItems: C2Choice.listFrom<ServiceModel,
+                                    ServiceModel>(
+                                  source: services,
+                                  value: (index, itemu) => itemu,
+                                  label: (index, item) {
+                                    return   
+                                    '${item.name} : Rs.${item.price}';
+                                  },
+                                  
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: MediaQuery.of(context).size.width,
+                              child: ElevatedButton(
+                                  onPressed: servicewatch.length > 0
+                                      ? () => finishService(context)
+                                      : null,
+                                  child: Text(
+                                    'Finish',
+                                    style: GoogleFonts.robotoMono(),
+                                  )),
+                            )
+                          ],
+                        );
+                      }));
+                    }
+                  },
+                ),
+              )

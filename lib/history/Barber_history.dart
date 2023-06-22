@@ -1,6 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
-import 'package:flutter/cupertino.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/booking/state_management.dart';
 import 'package:flutter_application_2/history/get_details.dart';
@@ -13,13 +13,17 @@ import '../booking/submit_model.dart';
 import '../booking/util.dart';
 
 class BarberHistoryScreen extends ConsumerWidget {
-  const BarberHistoryScreen({super.key});
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  BarberHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    
+
     var dateWatch = ref.watch(barberHistoryDate.state).state;
     return SafeArea(
         child: Scaffold(
+      key: scaffoldKey,
       resizeToAvoidBottomInset: true,
       backgroundColor: const Color(0xFFFDF9EE),
       appBar: AppBar(
@@ -106,6 +110,12 @@ class BarberHistoryScreen extends ConsumerWidget {
                             return ListView.builder(
                                 itemCount: userBooking.length,
                                 itemBuilder: ((context, index) {
+                                  var isExpired =
+                                      DateTime.fromMillisecondsSinceEpoch(
+                                              userBooking[index].timestamp)
+                                          .isBefore(synTime);
+                                  //print(isExpired);
+                                  //print(synTime);
                                   return Card(
                                     elevation: 8,
                                     shape: const RoundedRectangleBorder(
@@ -216,6 +226,39 @@ class BarberHistoryScreen extends ConsumerWidget {
                                                                       .w300,
                                                               fontSize: 7))
                                                 ],
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                        Container(
+                                          decoration: const BoxDecoration(
+                                              color: Colors.redAccent,
+                                              borderRadius: BorderRadius.only(
+                                                  bottomLeft:
+                                                      Radius.circular(22),
+                                                  bottomRight:
+                                                      Radius.circular(22))),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Padding(
+                                                padding: const EdgeInsets
+                                                    .symmetric(vertical: 10),
+                                                child: Text(
+                                                  userBooking[index].done
+                                                      ? 'FINISHED'
+                                                      : userBooking[index]
+                                                              .isCancelled
+                                                          ? 'cancelled'
+                                                          : isExpired
+                                                              ? 'EXPIRED'
+                                                              : 'CANCEL',
+                                                  style:
+                                                      GoogleFonts.robotoMono(
+                                                          color:
+                                                              Colors.black),
+                                                ),
                                               )
                                             ],
                                           ),

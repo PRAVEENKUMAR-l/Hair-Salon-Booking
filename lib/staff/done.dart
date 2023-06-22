@@ -25,6 +25,32 @@ class DoneService extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.read(selectedService.state).state.clear();
+    cancelDone(BuildContext context) {
+      var batch = FirebaseFirestore.instance.batch();
+      var barberBook = ref.read(selectedBooking.state).state;
+      var userBook = FirebaseFirestore.instance
+          .collection('user')
+          .doc(barberBook.Email)
+          .collection('Booking_${barberBook.customerId}')
+          .doc(
+              '${barberBook.Barberid}_${DateFormat('dd_MM_yyyy').format(DateTime.fromMillisecondsSinceEpoch(barberBook.timestamp))}_${barberBook.slot}');
+      Map<String, dynamic> cancelDone = {};
+      print(DateFormat('dd_MM_yyyy')
+          .format(DateTime.fromMillisecondsSinceEpoch(barberBook.timestamp)));
+      print(barberBook.slot);
+      print(barberBook.Barberid);
+      cancelDone['isCancelled'] = true;
+      batch.update(userBook, cancelDone);
+      batch.update(barberBook.reference, cancelDone);
+      batch.commit().then((value) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('cancellation Done')))
+            .closed
+            .then((value) => Navigator.of(context).pop());
+      });
+    }
+
     finishService(BuildContext context) {
       var batch = FirebaseFirestore.instance.batch();
       var barberBook = ref.read(selectedBooking.state).state;
@@ -92,6 +118,7 @@ class DoneService extends ConsumerWidget {
             SaloonName: '',
             time: '',
             done: false,
+            isCancelled: false,
             services: '',
             totalPrice: 0.0,
             slot: 0,
@@ -183,7 +210,13 @@ class DoneService extends ConsumerWidget {
                                       }),
                                       ref.read(selectedBooking.state).state.done
                                           ? const Chip(label: Text('Finish'))
-                                          : Container()
+                                          : ref
+                                                  .read(selectedBooking.state)
+                                                  .state
+                                                  .isCancelled
+                                              ?  Chip(
+                                                  label: Text('Cancelled'))
+                                              : Container()
                                     ],
                                   )
                                 ],
@@ -240,9 +273,13 @@ class DoneService extends ConsumerWidget {
                                 width: MediaQuery.of(context).size.width,
                                 child: ElevatedButton(
                                     onPressed: ref
-                                            .read(selectedBooking.state)
-                                            .state
-                                            .done
+                                                .read(selectedBooking.state)
+                                                .state
+                                                .done ||
+                                            ref
+                                                .read(selectedBooking.state)
+                                                .state
+                                                .isCancelled
                                         ? null
                                         : services.isNotEmpty
                                             ? () => finishService(context)
@@ -250,6 +287,25 @@ class DoneService extends ConsumerWidget {
                                     child: Text(
                                       'Finish',
                                       style: GoogleFonts.robotoMono(),
+                                    )),
+                              ),
+                              SizedBox(
+                                width: MediaQuery.of(context).size.width,
+                                child: ElevatedButton(
+                                    onPressed: ref
+                                                .read(selectedBooking.state)
+                                                .state
+                                                .isCancelled ||
+                                            ref
+                                                .read(selectedBooking.state)
+                                                .state
+                                                .done
+                                        ? null
+                                        : () => cancelDone(context),
+                                    child: Text(
+                                      'Cancel',
+                                      style: GoogleFonts.robotoMono(
+                                          color: Colors.red),
                                     )),
                               )
                             ],

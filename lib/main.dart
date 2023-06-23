@@ -1,12 +1,36 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_2/demo.dart';
 import 'package:flutter_application_2/login/errormsg.dart';
 import 'package:flutter_application_2/login/main_inter.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+AndroidNotificationChannel channel = const AndroidNotificationChannel(
+    'this is immportant', 'this is notification',
+    importance: Importance.high, playSound: true);
+
+final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+Future<void> firebaseMessagingBackgroundHandeler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print('a bg message:${message.messageId}');
+}
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  FirebaseMessaging.onBackgroundMessage(
+      (message) => firebaseMessagingBackgroundHandeler(message));
+  await _flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
+  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+      alert: true, badge: true, sound: true);
+
   runApp(const ProviderScope(child: MyApp()));
 }
 
